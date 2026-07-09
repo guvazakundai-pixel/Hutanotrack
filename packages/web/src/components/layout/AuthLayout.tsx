@@ -3,7 +3,8 @@
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { HeartPulse } from 'lucide-react';
-import { APP_NAME, TAGLINE } from '@hutanotrack/shared';
+const APP_NAME = 'HutanoTrack';
+const TAGLINE = 'Keeping Communities Connected to Care';
 
 export function AuthLayout({ children }: { children: ReactNode }) {
   return (

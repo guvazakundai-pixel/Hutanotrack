@@ -6,7 +6,20 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { AlertTriangle, CheckCircle, Phone, Ambulance } from 'lucide-react';
-import { DANGER_SIGNS_QUESTIONS, EMERGENCY_INSTRUCTIONS } from '@hutanotrack/shared';
+const DANGER_SIGNS_QUESTIONS = [
+  { id: 'chestPain', question_en: 'Are you experiencing chest pain?', question_sho: 'Uri kunzwa kurwadziwa muchipfuva?', question_nde: 'Uzwa ubuhlungu esifubeni?' },
+  { id: 'severeHeadache', question_en: 'Do you have a severe headache?', question_sho: 'Une musoro unorwadza zvakanyanya?', question_nde: 'Unekhanda elibuhlungu kakhulu?' },
+  { id: 'blurredVision', question_en: 'Is your vision blurred?', question_sho: 'Maziso ako anoona makushe?', question_nde: 'Amehlo akho ayabona kufiphele?' },
+  { id: 'difficultyBreathing', question_en: 'Are you having difficulty breathing?', question_sho: 'Uri kunetseka kufema?', question_nde: 'Uhlangabezana nobunzima bokuphefumula?' },
+  { id: 'highGlucoseSymptoms', question_en: 'Are you experiencing symptoms of high blood sugar?', question_sho: 'Uri kunzwa zviratidzo zveshuga yakawanda?', question_nde: 'Uzwa izimpawu zoshukela ephezulu?' },
+  { id: 'pregnancyDangerSigns', question_en: 'Do you have any pregnancy danger signs?', question_sho: 'Une zviratidzo zvine ngozi zvepamuviri?', question_nde: 'Une izimpawu eziyingozi zokukhulelwa?' },
+];
+
+const EMERGENCY_INSTRUCTIONS = {
+  en: 'Please remain calm. Emergency services have been notified. A healthcare worker will contact you shortly. If you feel your condition is worsening, please call your nearest clinic or emergency services immediately.',
+  sho: 'Ndapota ramba wakadzikama. Vashandi vehutano vave kuziviswa. Mushandi wehutano achakubatirai muchangobva. Kana uchinzwa mamiriro ako achiwedzera, ndapota fona kukiriniki yako yepedyo kana mauto ekukurumidzira.',
+  nde: 'Sicela uhlale uzolile. Izinsiza eziphuthumayo sezazisiwe. Umsebenzi wezempilo uzakuthinta maduze. Uma uzwa isimo sakho siba sibi, sicela ushayele umtholampilo oseduze noma izinsiza eziphuthumayo.',
+};
 
 export default function EmergencyPage() {
   const [answers, setAnswers] = useState<Record<string, boolean>>({});
