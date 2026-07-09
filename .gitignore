@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.next/
+.cache/
+*.log
+.env
+.env.local
+.DS_Store
+*.tsbuildinfo
+coverage/
+.turbo/
+build/
+android/
+.idea/
+.vscode/
+*.iml
+pubspec.lock
