@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,7 +28,7 @@ import { UserRole } from '@/types';
 
 interface NavItem {
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   href: string;
   roles: UserRole[];
 }

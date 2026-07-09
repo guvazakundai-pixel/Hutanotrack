@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { AuthProvider } from '@/providers/auth-provider';
 import '@/styles/globals.css';
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
   keywords: ['healthcare', 'Zimbabwe', 'patient management', 'clinic', 'medical records'],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-gray-50 dark:bg-surface-dark antialiased">
