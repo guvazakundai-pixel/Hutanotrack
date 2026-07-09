@@ -40,7 +40,7 @@
 
 @layer base {
   * {
-    @apply border-border-color;
+    border-color: var(--border-color);
   }
 
   body {
