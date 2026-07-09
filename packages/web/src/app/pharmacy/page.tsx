@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
 import { SearchInput } from '@/components/ui/SearchInput';
 import Button from '@/components/ui/Button';
-import { Pill, AlertTriangle, Package, DollarSign, Plus } from 'lucide-react';
+import { Pill, AlertTriangle, Package, Plus } from 'lucide-react';
 import { useState } from 'react';
 
 const inventory = [

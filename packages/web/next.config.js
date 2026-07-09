@@ -4,7 +4,6 @@ const nextConfig = {
     domains: ['images.unsplash.com', 'plus.unsplash.com'],
   },
   reactStrictMode: true,
-  transpilePackages: ['@hutanotrack/shared'],
 };
 
 module.exports = nextConfig;

@@ -14,9 +14,13 @@ export function Header() {
   const { setMobileMenuOpen } = useDashboard();
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const pageTitle = pathname
-    ? pathname.split('/').filter(Boolean).pop()?.replace(/-/g, ' ') || 'Dashboard'
-    : 'Dashboard';
+  const pageTitle = (() => {
+    if (!pathname) return 'Dashboard';
+    const segments = pathname.split('/').filter(Boolean);
+    const last = segments[segments.length - 1];
+    if (!last || last.startsWith('[')) return 'Dashboard';
+    return last.replace(/-/g, ' ');
+  })();
 
   return (
     <header className="sticky top-0 z-30 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700">

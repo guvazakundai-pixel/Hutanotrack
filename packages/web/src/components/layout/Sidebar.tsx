@@ -24,6 +24,9 @@ import {
   LogOut,
   Building2,
   X,
+  BookOpen,
+  UsersRound,
+  Shield,
 } from 'lucide-react';
 import { UserRole } from '@/types';
 
@@ -43,6 +46,9 @@ const navItems: NavItem[] = [
   { label: 'Community', icon: <Building2 className="w-5 h-5" />, href: '/community', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE, UserRole.CHW, UserRole.DATA_MANAGER] },
   { label: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, href: '/analytics', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.DATA_MANAGER] },
   { label: 'Emergency', icon: <HeartPulse className="w-5 h-5" />, href: '/emergency', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE, UserRole.CHW] },
+  { label: 'Education', icon: <BookOpen className="w-5 h-5" />, href: '/education', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE, UserRole.CHW] },
+  { label: 'Family', icon: <UsersRound className="w-5 h-5" />, href: '/family', roles: [UserRole.ADMIN, UserRole.CHW, UserRole.FAMILY] },
+  { label: 'Admin', icon: <Shield className="w-5 h-5" />, href: '/admin', roles: [UserRole.ADMIN] },
   { label: 'Settings', icon: <Settings className="w-5 h-5" />, href: '/settings', roles: [UserRole.ADMIN] },
 ];
 

@@ -134,7 +134,7 @@ export default function LandingPage() {
               </div>
               <span className="font-semibold text-white">{APP_NAME}</span>
             </div>
-            <p className="text-sm">&copy; 2024 {APP_NAME}. All rights reserved.</p>
+            <p className="text-sm">&copy; {new Date().getFullYear()} {APP_NAME}. All rights reserved.</p>
           </div>
         </div>
       </footer>

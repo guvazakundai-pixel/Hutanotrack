@@ -4,8 +4,10 @@ import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/Card';
 import { HeartPulse, Bell } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import { useAuth } from '@/providers/auth-provider';
 
 export function WelcomeCard() {
+  const { user } = useAuth();
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
 
@@ -22,7 +24,7 @@ export function WelcomeCard() {
         <div className="relative z-10">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-2xl font-bold">{greeting}, Dr. Moyo</h2>
+              <h2 className="text-2xl font-bold">{greeting}, {user ? `${user.firstName} ${user.lastName}` : 'Dr. Moyo'}</h2>
               <p className="text-medical-100 mt-1">
                 Here's your clinic overview for today.
               </p>

@@ -1,151 +1,375 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { AuthLayout } from '@/components/layout/AuthLayout';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/providers/auth-provider';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import { useAuth } from '@/providers/auth-provider';
-import { Phone, Lock, Smartphone, ArrowRight } from 'lucide-react';
+import {
+  HeartPulse,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  WifiOff,
+  Shield,
+  Stethoscope,
+  Users,
+  ArrowRight,
+  Check,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+type Role = 'admin' | 'staff' | 'chw';
+
+const ROLES: { id: Role; label: string; icon: typeof Shield }[] = [
+  { id: 'admin', label: 'Admin', icon: Shield },
+  { id: 'staff', label: 'Clinic Staff', icon: Stethoscope },
+  { id: 'chw', label: 'CHW', icon: Users },
+];
+
+function validateEmail(value: string): string | null {
+  if (!value.trim()) return 'Email is required';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()) && !/^\+?[\d\s-]{7,}$/.test(value.trim())) {
+    return 'Enter a valid email or phone number';
+  }
+  return null;
+}
+
+function validatePassword(value: string): string | null {
+  if (!value) return 'Password is required';
+  if (value.length < 4) return 'Password must be at least 4 characters';
+  return null;
+}
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, loginWithOtp } = useAuth();
-  const [method, setMethod] = useState<'phone' | 'otp'>('phone');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showOtpInput, setShowOtpInput] = useState(false);
+  const { login } = useAuth();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      if (method === 'phone') {
-        await login(phone, password);
-      } else {
-        if (!showOtpInput) {
-          setShowOtpInput(true);
-          setLoading(false);
-          return;
-        }
-        await loginWithOtp(phone, otp);
-      }
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Login failed:', error);
-    } finally {
-      setLoading(false);
-    }
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState<Role>('staff');
+  const [remember, setRemember] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const fieldErrors = {
+    email: touched.email ? validateEmail(email) : null,
+    password: touched.password ? validatePassword(password) : null,
   };
 
+  const isValid = !validateEmail(email) && !validatePassword(password);
+
+  useEffect(() => {
+    setIsOffline(!navigator.onLine);
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setTouched({ email: true, password: true });
+      if (!isValid) return;
+
+      setIsLoading(true);
+      setErrorMessage(null);
+
+      try {
+        await login(email, password);
+        router.push('/dashboard');
+      } catch {
+        setErrorMessage('Invalid credentials. Please check your email and password.');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [email, password, isValid, login, router],
+  );
+
   return (
-    <AuthLayout>
-      <div className="space-y-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Welcome Back</h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Sign in to your account</p>
-        </div>
+    <div className="min-h-screen flex bg-slate-50 dark:bg-surface-dark">
+      {/* Brand side — hidden on mobile */}
+      <div className="hidden lg:flex lg:w-[480px] xl:w-[520px] relative flex-col bg-gradient-to-br from-medical-600 via-medical-700 to-medical-900 overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNCI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-40" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-medical-400/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 -right-32 w-[400px] h-[400px] bg-healthcare-400/10 rounded-full blur-3xl" />
 
-        {/* Method toggle */}
-        <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl">
-          <button
-            onClick={() => { setMethod('phone'); setShowOtpInput(false); }}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all ${
-              method === 'phone'
-                ? 'bg-white dark:bg-surface-dark-elevated text-gray-900 dark:text-gray-100 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
+        <div className="relative z-10 flex flex-col h-full p-12">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
           >
-            <Lock className="w-4 h-4 inline mr-2" />
-            Password
-          </button>
-          <button
-            onClick={() => { setMethod('otp'); setShowOtpInput(false); }}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-medium transition-all ${
-              method === 'otp'
-                ? 'bg-white dark:bg-surface-dark-elevated text-gray-900 dark:text-gray-100 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            <Smartphone className="w-4 h-4 inline mr-2" />
-            OTP
-          </button>
-        </div>
+            <div className="flex items-center gap-3 mb-12">
+              <div className="w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center ring-1 ring-white/20">
+                <HeartPulse className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white tracking-tight">HutanoTrack</h1>
+                <p className="text-medical-200 text-xs">Digital Healthcare for Zimbabwe</p>
+              </div>
+            </div>
+          </motion.div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <Input
-            label="Phone Number"
-            type="tel"
-            placeholder="+263 712 345 678"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            icon={<Phone className="w-4 h-4" />}
-            required
-          />
-
-          {method === 'phone' ? (
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              icon={<Lock className="w-4 h-4" />}
-              required
-            />
-          ) : showOtpInput ? (
+          <div className="flex-1 flex flex-col justify-center max-w-sm">
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
             >
-              <Input
-                label="OTP Code"
-                type="text"
-                placeholder="Enter 6-digit OTP"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                maxLength={6}
-                required
-              />
+              <h2 className="text-3xl font-bold text-white leading-tight mb-3">
+                Keeping Communities
+                <br />
+                <span className="text-medical-200">Connected to Care</span>
+              </h2>
+              <p className="text-medical-200/80 text-sm leading-relaxed mb-8">
+                A modern, offline-first digital healthcare platform purpose-built for Zimbabwe and
+                low-resource environments.
+              </p>
             </motion.div>
-          ) : null}
 
-          <Button type="submit" loading={loading} className="w-full" size="lg">
-            {method === 'otp' && !showOtpInput ? 'Send OTP' : 'Sign In'}
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        </form>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="space-y-4"
+            >
+              {[
+                { label: '10,000+', sub: 'Patients served' },
+                { label: '500+', sub: 'Clinics onboarded' },
+                { label: '24/7', sub: 'Support available' },
+              ].map((stat) => (
+                <div key={stat.label} className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-healthcare-400" />
+                  <span className="text-white font-semibold text-sm">{stat.label}</span>
+                  <span className="text-medical-200/60 text-sm">{stat.sub}</span>
+                </div>
+              ))}
+            </motion.div>
+          </div>
 
-        {method === 'phone' && (
-          <div className="text-center">
-            <button className="text-sm text-medical-500 hover:text-medical-600 font-medium">
-              Forgot password?
-            </button>
-          </div>
-        )}
-
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200 dark:border-gray-700" />
-          </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-white dark:bg-surface-dark px-3 text-gray-400">Or continue with</span>
-          </div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="text-medical-200/40 text-xs"
+          >
+            &copy; {new Date().getFullYear()} HutanoTrack. All rights reserved.
+          </motion.p>
         </div>
-
-        <Button variant="outline" className="w-full" size="lg" onClick={() => {}}>
-          <Smartphone className="w-4 h-4" />
-          Biometric Login
-        </Button>
-
-        <p className="text-center text-sm text-gray-500">
-          Don't have an account?{' '}
-          <button className="text-medical-500 hover:text-medical-600 font-medium">Register</button>
-        </p>
       </div>
-    </AuthLayout>
+
+      {/* Form side */}
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
+            <div className="w-10 h-10 rounded-xl bg-medical-500 flex items-center justify-center">
+              <HeartPulse className="w-6 h-6 text-white" />
+            </div>
+            <div className="text-left">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">HutanoTrack</h1>
+              <p className="text-xs text-gray-400">Digital Healthcare for Zimbabwe</p>
+            </div>
+          </div>
+
+          {/* Offline banner */}
+          <AnimatePresence>
+            {isOffline && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-4 flex items-center gap-3 p-3 rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20"
+              >
+                <WifiOff className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  You appear to be offline. An internet connection is required to sign in.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Error banner */}
+          <AnimatePresence>
+            {errorMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="mb-4 flex items-start gap-3 p-4 rounded-2xl border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20"
+              >
+                <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-red-800 dark:text-red-200">Sign in failed</p>
+                  <p className="text-sm text-red-600 dark:text-red-300 mt-0.5">{errorMessage}</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Welcome back</h2>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">Sign in to your account to continue</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+            {/* Role selector */}
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">I am a</p>
+              <div className="flex p-1 bg-gray-100 dark:bg-gray-800/80 rounded-2xl">
+                {ROLES.map((r) => {
+                  const Icon = r.icon;
+                  const active = role === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      disabled={isLoading}
+                      onClick={() => setRole(r.id)}
+                      className={cn(
+                        'flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-sm font-medium transition-all',
+                        active
+                          ? 'bg-white dark:bg-surface-dark-elevated text-gray-900 dark:text-gray-100 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300',
+                      )}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="hidden sm:inline">{r.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Email */}
+            <div>
+              <Input
+                label="Email or Phone Number"
+                type="text"
+                placeholder="e.g. admin@hutanotrack.co.zw"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
+                icon={<Mail className="w-4 h-4" />}
+                error={fieldErrors.email || undefined}
+                disabled={isLoading}
+                autoComplete="username"
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-medical-600 hover:text-medical-700 dark:text-medical-400 dark:hover:text-medical-300 transition-colors"
+                >
+                  Forgot password?
+                </button>
+              </div>
+              <div className="relative">
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
+                  disabled={isLoading}
+                  autoComplete="current-password"
+                  className={cn(
+                    'w-full px-4 py-3 pl-10 pr-11 rounded-2xl border bg-white dark:bg-surface-dark-elevated text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200',
+                    'focus:outline-none focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500',
+                    fieldErrors.password
+                      ? 'border-red-300 dark:border-red-500 focus:ring-red-500/20 focus:border-red-500'
+                      : 'border-gray-200 dark:border-gray-700',
+                  )}
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {fieldErrors.password && (
+                <p className="mt-1.5 text-sm text-red-500">{fieldErrors.password}</p>
+              )}
+            </div>
+
+            {/* Remember me */}
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={remember}
+                  onClick={() => setRemember((prev) => !prev)}
+                  className={cn(
+                    'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all',
+                    remember
+                      ? 'bg-medical-500 border-medical-500 text-white'
+                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-surface-dark-elevated',
+                  )}
+                >
+                  <AnimatePresence>
+                    {remember && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                      >
+                        <Check className="w-3 h-3" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </button>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Remember me</span>
+              </label>
+            </div>
+
+            {/* Submit */}
+            <Button type="submit" loading={isLoading} disabled={isLoading || isOffline} className="w-full" size="lg">
+              {isLoading ? 'Signing in' : 'Sign in'}
+              {!isLoading && <ArrowRight className="w-5 h-5" />}
+            </Button>
+          </form>
+
+          {/* Register */}
+          <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+            Don&apos;t have an account?{' '}
+            <button className="font-medium text-medical-600 hover:text-medical-700 dark:text-medical-400 dark:hover:text-medical-300 transition-colors">
+              Contact your administrator
+            </button>
+          </p>
+        </motion.div>
+      </div>
+    </div>
   );
 }
