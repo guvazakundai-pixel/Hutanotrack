@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 import { useTheme } from '@/providers/theme-provider';
+import { useDashboard } from '@/providers/dashboard-context';
 import {
   LayoutDashboard,
   Users,
@@ -46,10 +47,10 @@ const navItems: NavItem[] = [
 ];
 
 export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const { user, logout, hasRole } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { sidebarOpen: collapsed, setSidebarOpen: setCollapsed } = useDashboard();
 
   const filteredItems = navItems.filter((item) => hasRole(item.roles));
 
