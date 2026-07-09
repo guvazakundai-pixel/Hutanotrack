@@ -19,19 +19,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 }
 
 function DashboardInner({ children }: { children: ReactNode }) {
-  const { sidebarOpen, setSidebarOpen } = useDashboard();
+  const { sidebarOpen } = useDashboard();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-surface-dark">
+    <div className="min-h-screen bg-slate-100 dark:bg-surface-dark">
       <Sidebar />
       <div
         className={cn(
-          'transition-all duration-300',
-          sidebarOpen ? 'lg:ml-[260px]' : 'lg:ml-[72px]',
+          'flex flex-col min-h-screen transition-all duration-300',
+          sidebarOpen ? 'lg:ml-64' : 'lg:ml-[72px]',
         )}
       >
-        <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="p-4 sm:p-6">{children}</main>
+        <Header />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, ReactNode } from 'react';
+import { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,7 +23,7 @@ import {
   Moon,
   LogOut,
   Building2,
-  UserCircle,
+  X,
 } from 'lucide-react';
 import { UserRole } from '@/types';
 
@@ -46,25 +46,17 @@ const navItems: NavItem[] = [
   { label: 'Settings', icon: <Settings className="w-5 h-5" />, href: '/settings', roles: [UserRole.ADMIN] },
 ];
 
-export function Sidebar() {
+function SidebarContent({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const pathname = usePathname();
   const { user, logout, hasRole } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { sidebarOpen: collapsed, setSidebarOpen: setCollapsed } = useDashboard();
 
   const filteredItems = navItems.filter((item) => hasRole(item.roles));
 
   return (
-    <motion.aside
-      animate={{ width: collapsed ? 72 : 260 }}
-      className={cn(
-        'fixed left-0 top-0 h-screen z-40',
-        'bg-white dark:bg-surface-dark border-r border-gray-100 dark:border-gray-800',
-        'flex flex-col',
-      )}
-    >
+    <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className={cn('flex items-center h-16 px-4 border-b border-gray-100 dark:border-gray-800', collapsed && 'justify-center')}>
+      <div className={cn('flex items-center h-16 px-4 border-b border-gray-100 dark:border-gray-800 shrink-0', collapsed && 'justify-center')}>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-medical-500 flex items-center justify-center">
             <HeartPulse className="w-5 h-5 text-white" />
@@ -115,7 +107,7 @@ export function Sidebar() {
       </nav>
 
       {/* User & Controls */}
-      <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-2">
+      <div className="border-t border-gray-100 dark:border-gray-800 p-3 space-y-2 shrink-0">
         {!collapsed && user && (
           <div className="flex items-center gap-3 px-3 py-2">
             <div className="w-8 h-8 rounded-full bg-medical-500 flex items-center justify-center text-white text-sm font-medium">
@@ -141,10 +133,10 @@ export function Sidebar() {
             {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
           </button>
           <button
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={onToggle}
             className={cn(
-              'flex-1 p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors',
-              collapsed && 'flex justify-center',
+              'hidden lg:flex flex-1 p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors',
+              collapsed && 'justify-center',
             )}
           >
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -160,6 +152,58 @@ export function Sidebar() {
           </button>
         </div>
       </div>
-    </motion.aside>
+    </div>
+  );
+}
+
+export function Sidebar() {
+  const { sidebarOpen: collapsed, setSidebarOpen: setCollapsed, mobileMenuOpen, setMobileMenuOpen } = useDashboard();
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <motion.aside
+        animate={{ width: collapsed ? 72 : 260 }}
+        className={cn(
+          'hidden lg:flex fixed left-0 top-0 h-screen z-40 flex-col',
+          'bg-white dark:bg-surface-dark border-r border-gray-200 dark:border-gray-700 shadow-sm',
+        )}
+      >
+        <SidebarContent collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+      </motion.aside>
+
+      {/* Mobile drawer overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50 bg-black/50 lg:hidden"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed left-0 top-0 h-full w-72 z-50 lg:hidden bg-white dark:bg-surface-dark shadow-2xl"
+            >
+              <div className="absolute top-3 right-3 z-10">
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <SidebarContent collapsed={false} onToggle={() => {}} />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
