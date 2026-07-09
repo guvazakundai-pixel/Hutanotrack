@@ -9,6 +9,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { AreaChart } from '@/components/charts/AreaChart';
 import { BarChart } from '@/components/charts/BarChart';
 import { Badge } from '@/components/ui/Badge';
+import { useAuth } from '@/providers/auth-provider';
+import { UserRole } from '@/types';
 
 const monthlyData = [
   { name: 'Jan', value: 400 },
@@ -42,24 +44,51 @@ const stats = {
 };
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === UserRole.ADMIN;
+
   return (
     <DashboardLayout>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="space-y-6"
+        className="h-full space-y-4 min-w-0"
       >
         <WelcomeCard />
+
         <StatsGrid stats={stats} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {isAdmin && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card padding="sm">
+              <div className="text-center py-4">
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">12</p>
+                <p className="text-xs text-gray-500 mt-1">Active Staff</p>
+              </div>
+            </Card>
+            <Card padding="sm">
+              <div className="text-center py-4">
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">3</p>
+                <p className="text-xs text-gray-500 mt-1">Clinics</p>
+              </div>
+            </Card>
+            <Card padding="sm">
+              <div className="text-center py-4">
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">98%</p>
+                <p className="text-xs text-gray-500 mt-1">System Uptime</p>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Patient Growth</CardTitle>
               <Badge variant="green">+12% this year</Badge>
             </CardHeader>
             <CardContent>
-              <AreaChart data={monthlyData} color="#2563eb" height={300} />
+              <AreaChart data={monthlyData} color="#2563eb" height={280} />
             </CardContent>
           </Card>
 
@@ -68,12 +97,12 @@ export default function DashboardPage() {
               <CardTitle>Disease Prevalence</CardTitle>
             </CardHeader>
             <CardContent>
-              <BarChart data={diseaseData} color="#16a34a" height={300} horizontal />
+              <BarChart data={diseaseData} color="#16a34a" height={280} horizontal />
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <RecentActivity />
 
           <Card>
@@ -81,7 +110,7 @@ export default function DashboardPage() {
               <CardTitle>Upcoming Appointments</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {[
                   { patient: 'Tendai Mukanya', time: '09:00 AM', type: 'Check-up', doctor: 'Dr. Moyo' },
                   { patient: 'Chipo Dube', time: '10:30 AM', type: 'Follow-up', doctor: 'Dr. Moyo' },
@@ -96,12 +125,12 @@ export default function DashboardPage() {
                     transition={{ delay: i * 0.05 }}
                     className="flex items-center justify-between p-3 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{apt.patient}</p>
-                      <p className="text-xs text-gray-500">{apt.type} • {apt.doctor}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{apt.patient}</p>
+                      <p className="text-xs text-gray-500">{apt.type} &middot; {apt.doctor}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-medical-500">{apt.time}</p>
+                    <div className="text-right shrink-0 ml-4">
+                      <p className="text-sm font-medium text-medical-500 whitespace-nowrap">{apt.time}</p>
                     </div>
                   </motion.div>
                 ))}

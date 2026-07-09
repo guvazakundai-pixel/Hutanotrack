@@ -171,13 +171,13 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Form side */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-8">
+        {/* Form side */}
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 min-w-0">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
+          className="w-full max-w-md min-w-0 break-words"
         >
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
@@ -245,7 +245,7 @@ export default function LoginPage() {
                       disabled={isLoading}
                       onClick={() => setRole(r.id)}
                       className={cn(
-                        'flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-sm font-medium transition-all',
+                        'flex-1 flex items-center justify-center gap-1.5 min-h-[44px] px-3 rounded-xl text-sm font-medium transition-all',
                         active
                           ? 'bg-white dark:bg-surface-dark-elevated text-gray-900 dark:text-gray-100 shadow-sm'
                           : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300',
@@ -355,7 +355,7 @@ export default function LoginPage() {
             </div>
 
             {/* Submit */}
-            <Button type="submit" loading={isLoading} disabled={isLoading || isOffline} className="w-full" size="lg">
+            <Button type="submit" loading={isLoading} disabled={isLoading || isOffline} className="w-full min-h-[44px]" size="lg">
               {isLoading ? 'Signing in' : 'Sign in'}
               {!isLoading && <ArrowRight className="w-5 h-5" />}
             </Button>
