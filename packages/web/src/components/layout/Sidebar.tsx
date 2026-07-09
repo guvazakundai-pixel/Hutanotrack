@@ -1,8 +1,8 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useCallback } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
@@ -54,8 +54,14 @@ const navItems: NavItem[] = [
 
 function SidebarContent({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout, hasRole } = useAuth();
   const { theme, toggleTheme } = useTheme();
+
+  const handleLogout = useCallback(() => {
+    logout();
+    router.push('/auth/login');
+  }, [logout, router]);
 
   const filteredItems = navItems.filter((item) => hasRole(item.roles));
 
@@ -148,7 +154,7 @@ function SidebarContent({ collapsed, onToggle }: { collapsed: boolean; onToggle:
             {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className={cn(
               'flex-1 p-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-400 hover:text-red-500 transition-colors',
               collapsed && 'flex justify-center',

@@ -1,7 +1,9 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { DashboardProvider, useDashboard } from '@/providers/dashboard-context';
+import { useAuth } from '@/providers/auth-provider';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { cn } from '@/lib/utils';
@@ -13,9 +15,32 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <DashboardProvider>
-      <DashboardInner>{children}</DashboardInner>
+      <DashboardGuard>{children}</DashboardGuard>
     </DashboardProvider>
   );
+}
+
+function DashboardGuard({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-100 dark:bg-surface-dark">
+        <div className="animate-pulse text-gray-400">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
+  return <DashboardInner>{children}</DashboardInner>;
 }
 
 function DashboardInner({ children }: { children: ReactNode }) {
