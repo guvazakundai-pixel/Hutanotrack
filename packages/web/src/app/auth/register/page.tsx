@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/providers/auth-provider';
+import { useAuth, RoleCredentials } from '@/providers/auth-provider';
 import { UserRole } from '@/types';
 import Button from '@/components/ui/Button';
 import {
@@ -21,6 +21,10 @@ import {
   Check,
   Info,
   ArrowRight,
+  Key,
+  FileText,
+  BadgeCheck,
+  IdCard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -30,6 +34,9 @@ interface RoleOption {
   recommendation: string;
   requirement: string;
   icon: typeof Shield;
+  credentialLabel: string;
+  credentialPlaceholder: string;
+  credentialHint: string;
 }
 
 const ROLES: RoleOption[] = [
@@ -37,36 +44,51 @@ const ROLES: RoleOption[] = [
     id: UserRole.ADMIN,
     label: 'Administrator',
     recommendation: 'Full system administration — manage users, clinics, and system settings.',
-    requirement: 'Requires admin-level access granted by the organization.',
+    requirement: 'Requires a valid Admin Setup Key from your organization.',
     icon: Shield,
+    credentialLabel: 'Admin Setup Key',
+    credentialPlaceholder: 'Enter the admin setup key',
+    credentialHint: 'Provided by your system administrator. This verifies you have authority to manage the system.',
   },
   {
     id: UserRole.DOCTOR,
     label: 'Doctor',
     recommendation: 'Clinical care — diagnose conditions, prescribe treatments, and manage patient recovery.',
-    requirement: 'Requires a valid medical license and registration.',
+    requirement: 'Requires a valid Medical License Number issued by the Medical and Dental Practitioners Council.',
     icon: Stethoscope,
+    credentialLabel: 'Medical License Number',
+    credentialPlaceholder: 'e.g. ML-123456',
+    credentialHint: 'Format: ML- followed by 6 digits. Issued by the Medical and Dental Practitioners Council of Zimbabwe.',
   },
   {
     id: UserRole.NURSE,
     label: 'Nurse',
     recommendation: 'Patient care — triage, monitor vitals, administer medications, and support doctors.',
-    requirement: 'Requires nursing certification and registration.',
+    requirement: 'Requires a valid Nursing Certification Number from the Nurses Council.',
     icon: Users,
+    credentialLabel: 'Nursing Certification Number',
+    credentialPlaceholder: 'e.g. NC-123456',
+    credentialHint: 'Format: NC- followed by 6 digits. Issued by the Nurses Council of Zimbabwe.',
   },
   {
     id: UserRole.CHW,
     label: 'Community Health Worker',
     recommendation: 'Community health — conduct field visits, educate patients, and report to clinics.',
-    requirement: 'Requires CHW training and community assignment.',
+    requirement: 'Requires a valid CHW ID Number from your district health office.',
     icon: User,
+    credentialLabel: 'CHW ID Number',
+    credentialPlaceholder: 'e.g. CHW-123456',
+    credentialHint: 'Format: CHW- followed by 6 digits. Issued by your district health office.',
   },
   {
     id: UserRole.PATIENT,
     label: 'Patient',
     recommendation: 'Personal health — view your records, appointments, and educational content.',
-    requirement: 'Requires registration at a partner clinic.',
+    requirement: 'Open to all — no special credentials needed.',
     icon: HeartPulse,
+    credentialLabel: '',
+    credentialPlaceholder: '',
+    credentialHint: '',
   },
 ];
 
@@ -99,6 +121,30 @@ function validatePassword(value: string): string | null {
   return null;
 }
 
+function getCredentialIcon(role: UserRole): typeof Shield {
+  if (role === UserRole.ADMIN) return Key;
+  if (role === UserRole.DOCTOR) return FileText;
+  if (role === UserRole.NURSE) return BadgeCheck;
+  if (role === UserRole.CHW) return IdCard;
+  return Shield;
+}
+
+function getCredentialValue(role: UserRole, form: Record<string, string>): string {
+  if (role === UserRole.ADMIN) return form.adminKey || '';
+  if (role === UserRole.DOCTOR) return form.licenseNumber || '';
+  if (role === UserRole.NURSE) return form.certNumber || '';
+  if (role === UserRole.CHW) return form.chwId || '';
+  return '';
+}
+
+function buildCredentials(role: UserRole, form: Record<string, string>): RoleCredentials {
+  if (role === UserRole.ADMIN) return { adminKey: form.adminKey };
+  if (role === UserRole.DOCTOR) return { licenseNumber: form.licenseNumber };
+  if (role === UserRole.NURSE) return { certificationNumber: form.certNumber };
+  if (role === UserRole.CHW) return { chwId: form.chwId };
+  return {};
+}
+
 export default function RegisterPage() {
   const router = useRouter();
   const { register } = useAuth();
@@ -107,12 +153,17 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState<UserRole>(UserRole.PATIENT);
+  const [credentialValue, setCredentialValue] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const activeRole = ROLES.find((r) => r.id === role)!;
+  const CredentialIcon = getCredentialIcon(role);
+  const needsCredential = role !== UserRole.PATIENT;
 
   const fieldErrors = {
     email: touched.email ? validateEmail(email) : null,
@@ -121,19 +172,29 @@ export default function RegisterPage() {
       touched.confirm && confirmPassword !== password
         ? 'Passwords do not match'
         : null,
+    credential:
+      touched.credential && needsCredential && !credentialValue.trim()
+        ? `${activeRole.credentialLabel} is required for ${activeRole.label} registration.`
+        : null,
   };
 
   const isValid =
     !validateEmail(email) &&
     !validatePassword(password) &&
-    confirmPassword === password;
+    confirmPassword === password &&
+    (!needsCredential || credentialValue.trim().length > 0);
 
   const passwordHint = ROLE_PASSWORD_HINTS[role];
+
+  useEffect(() => {
+    setCredentialValue('');
+    setTouched((prev) => ({ ...prev, credential: false }));
+  }, [role]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      setTouched({ email: true, password: true, confirm: true });
+      setTouched({ email: true, password: true, confirm: true, credential: true });
       if (!isValid) return;
 
       setIsLoading(true);
@@ -141,7 +202,14 @@ export default function RegisterPage() {
       setSuccessMessage(null);
 
       try {
-        await register(email, password, role);
+        const formData: Record<string, string> = {
+          adminKey: role === UserRole.ADMIN ? credentialValue : '',
+          licenseNumber: role === UserRole.DOCTOR ? credentialValue : '',
+          certNumber: role === UserRole.NURSE ? credentialValue : '',
+          chwId: role === UserRole.CHW ? credentialValue : '',
+        };
+        const credentials = buildCredentials(role, formData);
+        await register(email, password, role, credentials);
         setSuccessMessage('Account created successfully! Redirecting to sign in...');
         setTimeout(() => {
           router.push('/auth/login');
@@ -153,7 +221,7 @@ export default function RegisterPage() {
         setIsLoading(false);
       }
     },
-    [email, password, role, isValid, register, router],
+    [email, password, role, credentialValue, isValid, register, router],
   );
 
   return (
@@ -190,11 +258,11 @@ export default function RegisterPage() {
               <h2 className="text-3xl font-bold text-white leading-tight mb-3">
                 Join HutanoTrack
                 <br />
-                <span className="text-medical-200">Start Your Journey</span>
+                <span className="text-medical-200">Verified Access for Everyone</span>
               </h2>
               <p className="text-medical-200/80 text-sm leading-relaxed mb-8">
-                Create your account and select your role to get started with Zimbabwe&apos;s digital
-                healthcare platform.
+                Healthcare professionals must verify their credentials to register. Patients can sign
+                up freely.
               </p>
             </motion.div>
 
@@ -205,7 +273,7 @@ export default function RegisterPage() {
               className="space-y-4"
             >
               {[
-                { label: 'Free for patients', sub: 'No registration fees' },
+                { label: 'Role-based access', sub: 'Credentials verified on sign-up' },
                 { label: 'Secure & private', sub: 'Your data is protected' },
                 { label: 'Offline-capable', sub: 'Works without internet' },
               ].map((stat) => (
@@ -230,12 +298,12 @@ export default function RegisterPage() {
       </div>
 
       {/* Form side */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 min-w-0">
+      <div className="flex-1 flex items-start justify-center p-4 sm:p-8 min-w-0 overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md min-w-0 break-words"
+          className="w-full max-w-md min-w-0 break-words py-8"
         >
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-6 justify-center">
@@ -292,7 +360,7 @@ export default function RegisterPage() {
               <div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Create account</h2>
                 <p className="text-gray-500 dark:text-gray-400 mt-1">
-                  Select your role and fill in your details.
+                  Select your role and provide your credentials.
                 </p>
               </div>
             </div>
@@ -312,7 +380,7 @@ export default function RegisterPage() {
                     <button
                       key={r.id}
                       type="button"
-                      disabled={isLoading}
+                      disabled={isLoading || !!successMessage}
                       onClick={() => setRole(r.id)}
                       className={cn(
                         'flex items-start gap-3 min-h-[56px] px-4 py-3 rounded-xl text-sm font-medium transition-all text-left w-full',
@@ -367,7 +435,7 @@ export default function RegisterPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
-                  disabled={isLoading}
+                  disabled={isLoading || !!successMessage}
                   autoComplete="email"
                   className={cn(
                     'w-full px-4 py-3 pl-10 rounded-2xl border bg-white dark:bg-surface-dark-elevated text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200',
@@ -383,6 +451,47 @@ export default function RegisterPage() {
                 <p className="mt-1.5 text-sm text-red-500">{fieldErrors.email}</p>
               )}
             </div>
+
+            {/* Role-specific credential */}
+            {needsCredential && (
+              <div>
+                <label
+                  htmlFor="reg-credential"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+                >
+                  {activeRole.credentialLabel} <span className="text-red-400">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                    <CredentialIcon className="w-4 h-4" />
+                  </div>
+                  <input
+                    id="reg-credential"
+                    type="text"
+                    value={credentialValue}
+                    onChange={(e) => setCredentialValue(e.target.value)}
+                    onBlur={() => setTouched((prev) => ({ ...prev, credential: true }))}
+                    disabled={isLoading || !!successMessage}
+                    autoComplete="off"
+                    placeholder={activeRole.credentialPlaceholder}
+                    className={cn(
+                      'w-full px-4 py-3 pl-10 rounded-2xl border bg-white dark:bg-surface-dark-elevated text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200',
+                      'focus:outline-none focus:ring-2 focus:ring-medical-500/20 focus:border-medical-500',
+                      fieldErrors.credential
+                        ? 'border-red-300 dark:border-red-500 focus:ring-red-500/20 focus:border-red-500'
+                        : 'border-gray-200 dark:border-gray-700',
+                    )}
+                  />
+                </div>
+                <div className="flex items-start gap-1.5 mt-1.5">
+                  <Info className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-gray-400">{activeRole.credentialHint}</p>
+                </div>
+                {fieldErrors.credential && (
+                  <p className="mt-1.5 text-sm text-red-500">{fieldErrors.credential}</p>
+                )}
+              </div>
+            )}
 
             {/* Password */}
             <div>
@@ -402,7 +511,7 @@ export default function RegisterPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
-                  disabled={isLoading}
+                  disabled={isLoading || !!successMessage}
                   autoComplete="new-password"
                   className={cn(
                     'w-full px-4 py-3 pl-10 pr-11 rounded-2xl border bg-white dark:bg-surface-dark-elevated text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200',
@@ -452,7 +561,7 @@ export default function RegisterPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   onBlur={() => setTouched((prev) => ({ ...prev, confirm: true }))}
-                  disabled={isLoading}
+                  disabled={isLoading || !!successMessage}
                   autoComplete="new-password"
                   className={cn(
                     'w-full px-4 py-3 pl-10 pr-11 rounded-2xl border bg-white dark:bg-surface-dark-elevated text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200',
@@ -481,11 +590,11 @@ export default function RegisterPage() {
             <Button
               type="submit"
               loading={isLoading}
-              disabled={isLoading}
+              disabled={isLoading || !!successMessage}
               className="w-full min-h-[44px]"
               size="lg"
             >
-              {isLoading ? 'Creating account...' : 'Create account'}
+              {isLoading ? 'Verifying credentials...' : 'Create account'}
               {!isLoading && <ArrowRight className="w-5 h-5" />}
             </Button>
           </form>

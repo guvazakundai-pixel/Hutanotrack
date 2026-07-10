@@ -3,19 +3,28 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, UserRole } from '@/types';
 
+export interface RoleCredentials {
+  adminKey?: string;
+  licenseNumber?: string;
+  certificationNumber?: string;
+  chwId?: string;
+}
+
 interface StoredAccount {
   email: string;
   password: string;
   role: UserRole;
   firstName: string;
   lastName: string;
+  credentials?: RoleCredentials;
+  verifiedAt: string;
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string, role?: UserRole) => Promise<void>;
-  register: (email: string, password: string, role: UserRole) => Promise<void>;
+  register: (email: string, password: string, role: UserRole, credentials?: RoleCredentials) => Promise<void>;
   loginWithOtp: (phone: string, otp: string) => Promise<void>;
   logout: () => void;
   hasRole: (roles: UserRole[]) => boolean;
@@ -32,6 +41,11 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 const ACCOUNTS_KEY = 'hutanotrack-accounts';
+const ADMIN_SETUP_KEY = 'ADMIN-SETUP-2024';
+
+const LICENSE_PATTERN = /^ML-\d{6}$/;
+const CERT_PATTERN = /^NC-\d{6}$/;
+const CHW_ID_PATTERN = /^CHW-\d{6}$/;
 
 const DEFAULT_ACCOUNTS: Record<string, StoredAccount> = {
   'admin@example.com': {
@@ -40,6 +54,8 @@ const DEFAULT_ACCOUNTS: Record<string, StoredAccount> = {
     role: UserRole.ADMIN,
     firstName: 'System',
     lastName: 'Admin',
+    credentials: { adminKey: ADMIN_SETUP_KEY },
+    verifiedAt: new Date().toISOString(),
   },
   'doctor@example.com': {
     email: 'doctor@example.com',
@@ -47,6 +63,8 @@ const DEFAULT_ACCOUNTS: Record<string, StoredAccount> = {
     role: UserRole.DOCTOR,
     firstName: 'Sarah',
     lastName: 'Doctor',
+    credentials: { licenseNumber: 'ML-654321' },
+    verifiedAt: new Date().toISOString(),
   },
   'nurse@example.com': {
     email: 'nurse@example.com',
@@ -54,6 +72,8 @@ const DEFAULT_ACCOUNTS: Record<string, StoredAccount> = {
     role: UserRole.NURSE,
     firstName: 'Grace',
     lastName: 'Nurse',
+    credentials: { certificationNumber: 'NC-654321' },
+    verifiedAt: new Date().toISOString(),
   },
   'chw@example.com': {
     email: 'chw@example.com',
@@ -61,6 +81,8 @@ const DEFAULT_ACCOUNTS: Record<string, StoredAccount> = {
     role: UserRole.CHW,
     firstName: 'Tendai',
     lastName: 'CHW',
+    credentials: { chwId: 'CHW-654321' },
+    verifiedAt: new Date().toISOString(),
   },
   'patient@example.com': {
     email: 'patient@example.com',
@@ -68,6 +90,7 @@ const DEFAULT_ACCOUNTS: Record<string, StoredAccount> = {
     role: UserRole.PATIENT,
     firstName: 'Chipo',
     lastName: 'Patient',
+    verifiedAt: new Date().toISOString(),
   },
 };
 
@@ -117,6 +140,33 @@ function validateEmail(value: string): string | null {
   return null;
 }
 
+function validateRoleCredentials(role: UserRole, credentials?: RoleCredentials): string | null {
+  if (role === UserRole.ADMIN) {
+    if (!credentials?.adminKey) return 'Admin Setup Key is required to register as Administrator. Contact your system administrator.';
+    if (credentials.adminKey !== ADMIN_SETUP_KEY) return 'Invalid Admin Setup Key. Please contact your system administrator for the correct key.';
+    return null;
+  }
+  if (role === UserRole.DOCTOR) {
+    if (!credentials?.licenseNumber) return 'Medical License Number is required to register as a Doctor.';
+    if (!LICENSE_PATTERN.test(credentials.licenseNumber)) return 'Invalid Medical License Number format. Must be ML- followed by 6 digits (e.g. ML-123456).';
+    return null;
+  }
+  if (role === UserRole.NURSE) {
+    if (!credentials?.certificationNumber) return 'Nursing Certification Number is required to register as a Nurse.';
+    if (!CERT_PATTERN.test(credentials.certificationNumber)) return 'Invalid Nursing Certification Number format. Must be NC- followed by 6 digits (e.g. NC-123456).';
+    return null;
+  }
+  if (role === UserRole.CHW) {
+    if (!credentials?.chwId) return 'CHW ID Number is required to register as a Community Health Worker.';
+    if (!CHW_ID_PATTERN.test(credentials.chwId)) return 'Invalid CHW ID Number format. Must be CHW- followed by 6 digits (e.g. CHW-123456).';
+    return null;
+  }
+  if (role === UserRole.PATIENT) {
+    return null;
+  }
+  return null;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -135,12 +185,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  const register = useCallback(async (email: string, password: string, role: UserRole) => {
+  const register = useCallback(async (email: string, password: string, role: UserRole, credentials?: RoleCredentials) => {
     const emailError = validateEmail(email);
     if (emailError) throw new Error(emailError);
 
     const passwordError = validatePasswordStrength(password);
     if (passwordError) throw new Error(passwordError);
+
+    const credError = validateRoleCredentials(role, credentials);
+    if (credError) throw new Error(credError);
 
     const accounts = getAccounts();
     const key = email.toLowerCase().trim();
@@ -150,7 +203,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const { firstName, lastName } = deriveName(email, role);
-    accounts[key] = { email: key, password, role, firstName, lastName };
+    accounts[key] = {
+      email: key,
+      password,
+      role,
+      firstName,
+      lastName,
+      credentials: credentials || {},
+      verifiedAt: new Date().toISOString(),
+    };
     saveAccounts(accounts);
   }, []);
 
@@ -165,7 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!account) {
       throw new Error(
-        `No account found for "${email}". Please create an account first, or use one of the demo accounts (e.g. admin@example.com / Admin@123).`,
+        `No account found for "${email}". Please create an account first.`,
       );
     }
 
@@ -188,7 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: account.role,
       language: 'en',
       isActive: true,
-      createdAt: new Date().toISOString(),
+      createdAt: account.verifiedAt,
     };
     setUser(newUser);
     localStorage.setItem('hutanotrack-token', 'mock-token');
