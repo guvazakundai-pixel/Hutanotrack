@@ -1,0 +1,5 @@
+{
+  "installCommand": "corepack enable && corepack prepare pnpm@10.8.0 --activate && pnpm install",
+  "buildCommand": "prisma generate && next build",
+  "framework": "nextjs"
+}
