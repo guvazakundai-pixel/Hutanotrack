@@ -57,6 +57,11 @@ export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
 
+  useEffect(() => {
+    localStorage.removeItem('hutanotrack-token');
+    localStorage.removeItem('hutanotrack-user');
+  }, []);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<UserRole>(UserRole.DOCTOR);

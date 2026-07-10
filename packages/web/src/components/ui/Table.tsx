@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, TableHTMLAttributes } from 'react';
+import { ReactNode, TableHTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
 
 interface TableProps extends TableHTMLAttributes<HTMLTableElement> {
@@ -47,7 +47,7 @@ export function TableRow({ className, children, ...props }: TableHTMLAttributes<
   );
 }
 
-export function TableHead({ className, children, ...props }: TableHTMLAttributes<HTMLTableCellElement>) {
+export function TableHead({ className, children, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
   return (
     <th
       className={cn(
@@ -61,7 +61,7 @@ export function TableHead({ className, children, ...props }: TableHTMLAttributes
   );
 }
 
-export function TableCell({ className, children, ...props }: TableHTMLAttributes<HTMLTableCellElement>) {
+export function TableCell({ className, children, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
   return (
     <td className={cn('px-4 py-3.5 text-sm text-gray-700 dark:text-gray-300', className)} {...props}>
       {children}
