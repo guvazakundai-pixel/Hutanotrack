@@ -41,15 +41,15 @@ const ROLES: RoleOption[] = [
 
 function validateEmail(value: string): string | null {
   if (!value.trim()) return 'Email is required';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()) && !/^\+?[\d\s-]{7,}$/.test(value.trim())) {
-    return 'Enter a valid email or phone number';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+    return 'Enter a valid email address';
   }
   return null;
 }
 
 function validatePassword(value: string): string | null {
   if (!value) return 'Password is required';
-  if (value.length < 4) return 'Password must be at least 4 characters';
+  if (value.length < 6) return 'Password must be at least 6 characters';
   return null;
 }
 
@@ -98,8 +98,9 @@ export default function LoginPage() {
       try {
         await login(email, password, role);
         router.push('/dashboard');
-      } catch {
-        setErrorMessage('Invalid credentials. Please check your email and password.');
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Sign in failed. Please try again.';
+        setErrorMessage(message);
       } finally {
         setIsLoading(false);
       }
@@ -189,7 +190,7 @@ export default function LoginPage() {
           className="w-full max-w-md min-w-0 break-words"
         >
           {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
+          <div className="lg:hidden flex items-center gap-3 mb-6 justify-center">
             <div className="w-10 h-10 rounded-xl bg-medical-500 flex items-center justify-center">
               <HeartPulse className="w-6 h-6 text-white" />
             </div>
@@ -234,15 +235,19 @@ export default function LoginPage() {
             )}
           </AnimatePresence>
 
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Welcome back</h2>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">Sign in to your account to continue</p>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Sign in</h2>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">
+              Select your role and enter your details to continue.
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             {/* Role selector */}
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">I am a</p>
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                I am a <span className="text-red-400">*</span>
+              </p>
               <div className="grid grid-cols-1 gap-1.5">
                 {ROLES.map((r) => {
                   const Icon = r.icon;
@@ -254,23 +259,27 @@ export default function LoginPage() {
                       disabled={isLoading}
                       onClick={() => setRole(r.id)}
                       className={cn(
-                        'flex items-center gap-3 min-h-[48px] px-4 rounded-xl text-sm font-medium transition-all text-left',
+                        'flex items-center gap-3 min-h-[48px] px-4 rounded-xl text-sm font-medium transition-all text-left w-full',
                         active
-                          ? 'bg-medical-50 dark:bg-medical-900/20 text-medical-700 dark:text-medical-300 ring-1 ring-medical-300 dark:ring-medical-700'
-                          : 'bg-white dark:bg-surface-dark-elevated text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border border-gray-200 dark:border-gray-700',
+                          ? 'bg-medical-50 dark:bg-medical-900/20 text-medical-700 dark:text-medical-300 ring-2 ring-medical-400 dark:ring-medical-600'
+                          : 'bg-white dark:bg-surface-dark-elevated text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border border-gray-200 dark:border-gray-700 hover:border-gray-300',
                       )}
                     >
                       <div className={cn(
-                        'p-1.5 rounded-lg',
+                        'p-2 rounded-lg shrink-0',
                         active ? 'bg-medical-100 dark:bg-medical-800 text-medical-600 dark:text-medical-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-400',
                       )}>
-                        <Icon className="w-4 h-4" />
+                        <Icon className="w-5 h-5" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium leading-tight">{r.label}</p>
-                        <p className="text-[11px] opacity-60 leading-tight mt-0.5">{r.subtitle}</p>
+                        <p className="text-sm font-semibold leading-tight">{r.label}</p>
+                        <p className="text-xs text-gray-400 leading-tight mt-0.5">{r.subtitle}</p>
                       </div>
-                      {active && <Check className="w-4 h-4 shrink-0 text-medical-500" />}
+                      {active && (
+                        <div className="w-5 h-5 rounded-full bg-medical-500 flex items-center justify-center shrink-0">
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                      )}
                     </button>
                   );
                 })}
@@ -280,9 +289,9 @@ export default function LoginPage() {
             {/* Email */}
             <div>
               <Input
-                label="Email or Phone Number"
-                type="text"
-                placeholder="e.g. admin@hutanotrack.co.zw"
+                label="Email Address"
+                type="email"
+                placeholder="e.g. admin@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
@@ -325,7 +334,7 @@ export default function LoginPage() {
                       ? 'border-red-300 dark:border-red-500 focus:ring-red-500/20 focus:border-red-500'
                       : 'border-gray-200 dark:border-gray-700',
                   )}
-                  placeholder="Enter your password"
+                  placeholder="At least 6 characters with a number"
                 />
                 <button
                   type="button"
@@ -374,18 +383,26 @@ export default function LoginPage() {
 
             {/* Submit */}
             <Button type="submit" loading={isLoading} disabled={isLoading || isOffline} className="w-full min-h-[44px]" size="lg">
-              {isLoading ? 'Signing in' : 'Sign in'}
+              {isLoading ? 'Signing in...' : 'Sign in'}
               {!isLoading && <ArrowRight className="w-5 h-5" />}
             </Button>
           </form>
 
-          {/* Register */}
-          <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-            Don&apos;t have an account?{' '}
-            <button className="font-medium text-medical-600 hover:text-medical-700 dark:text-medical-400 dark:hover:text-medical-300 transition-colors">
-              Contact your administrator
-            </button>
-          </p>
+          {/* Sign up */}
+          <div className="mt-8 text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              New to HutanoTrack?{' '}
+              <button
+                type="button"
+                className="font-semibold text-medical-600 hover:text-medical-700 dark:text-medical-400 dark:hover:text-medical-300 transition-colors"
+              >
+                Create an account
+              </button>
+            </p>
+            <p className="text-xs text-gray-400 mt-3">
+              For clinic access, contact your administrator.
+            </p>
+          </div>
         </motion.div>
       </div>
     </div>

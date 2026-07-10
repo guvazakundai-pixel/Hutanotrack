@@ -33,6 +33,14 @@ function deriveName(email: string, role: UserRole): { firstName: string; lastNam
   return { firstName: name, lastName: 'Staff' };
 }
 
+function validatePasswordStrength(password: string): string | null {
+  if (!password) return 'Password is required';
+  if (password.length < 6) return 'Password must be at least 6 characters';
+  if (!/[a-zA-Z]/.test(password)) return 'Password must contain at least one letter';
+  if (!/[0-9]/.test(password)) return 'Password must contain at least one number';
+  return null;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,7 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  const login = useCallback(async (email: string, _password: string, role: UserRole = UserRole.ADMIN) => {
+  const login = useCallback(async (email: string, password: string, role: UserRole = UserRole.ADMIN) => {
+    const passwordError = validatePasswordStrength(password);
+    if (passwordError) {
+      throw new Error(passwordError);
+    }
+
     const { firstName, lastName } = deriveName(email, role);
     const newUser: User = {
       id: '1',
@@ -64,21 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('hutanotrack-user', JSON.stringify(newUser));
   }, []);
 
-  const loginWithOtp = useCallback(async (phone: string, _otp: string) => {
-    const newUser: User = {
-      id: '1',
-      phone,
-      email: `${phone}@hutanotrack.co.zw`,
-      firstName: 'Phone',
-      lastName: 'User',
-      role: UserRole.PATIENT,
-      language: 'en',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-    };
-    setUser(newUser);
-    localStorage.setItem('hutanotrack-token', 'mock-token');
-    localStorage.setItem('hutanotrack-user', JSON.stringify(newUser));
+  const loginWithOtp = useCallback(async (_phone: string, _otp: string) => {
+    throw new Error('OTP login is not available yet.');
   }, []);
 
   const logout = useCallback(() => {
