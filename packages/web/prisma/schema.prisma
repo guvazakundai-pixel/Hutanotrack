@@ -12,6 +12,7 @@ enum UserRole {
   CLINIC_OWNER
   DOCTOR
   NURSE
+  CHW
   PATIENT
 }
 

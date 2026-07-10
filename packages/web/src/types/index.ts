@@ -3,6 +3,7 @@ export enum UserRole {
   CLINIC_OWNER = 'CLINIC_OWNER',
   DOCTOR = 'DOCTOR',
   NURSE = 'NURSE',
+  CHW = 'CHW',
   PATIENT = 'PATIENT',
 }
 
