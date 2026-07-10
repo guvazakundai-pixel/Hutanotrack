@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/providers/auth-provider';
+import { UserRole } from '@/types';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import {
@@ -17,17 +18,25 @@ import {
   Shield,
   Stethoscope,
   Users,
+  User,
   ArrowRight,
   Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type Role = 'admin' | 'staff' | 'chw';
+interface RoleOption {
+  id: UserRole;
+  label: string;
+  subtitle: string;
+  icon: typeof Shield;
+}
 
-const ROLES: { id: Role; label: string; icon: typeof Shield }[] = [
-  { id: 'admin', label: 'Admin', icon: Shield },
-  { id: 'staff', label: 'Clinic Staff', icon: Stethoscope },
-  { id: 'chw', label: 'CHW', icon: Users },
+const ROLES: RoleOption[] = [
+  { id: UserRole.ADMIN, label: 'Administrator', subtitle: 'Full system access', icon: Shield },
+  { id: UserRole.DOCTOR, label: 'Doctor', subtitle: 'Clinical management', icon: Stethoscope },
+  { id: UserRole.NURSE, label: 'Nurse', subtitle: 'Patient care', icon: Users },
+  { id: UserRole.CHW, label: 'Community Health Worker', subtitle: 'Field visits & records', icon: User },
+  { id: UserRole.PATIENT, label: 'Patient', subtitle: 'View my health data', icon: HeartPulse },
 ];
 
 function validateEmail(value: string): string | null {
@@ -50,7 +59,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<Role>('staff');
+  const [role, setRole] = useState<UserRole>(UserRole.DOCTOR);
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,7 +96,7 @@ export default function LoginPage() {
       setErrorMessage(null);
 
       try {
-        await login(email, password);
+        await login(email, password, role);
         router.push('/dashboard');
       } catch {
         setErrorMessage('Invalid credentials. Please check your email and password.');
@@ -95,7 +104,7 @@ export default function LoginPage() {
         setIsLoading(false);
       }
     },
-    [email, password, isValid, login, router],
+    [email, password, role, isValid, login, router],
   );
 
   return (
@@ -171,7 +180,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-        {/* Form side */}
+      {/* Form side */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-8 min-w-0">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -234,7 +243,7 @@ export default function LoginPage() {
             {/* Role selector */}
             <div>
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">I am a</p>
-              <div className="flex p-1 bg-gray-100 dark:bg-gray-800/80 rounded-2xl">
+              <div className="grid grid-cols-1 gap-1.5">
                 {ROLES.map((r) => {
                   const Icon = r.icon;
                   const active = role === r.id;
@@ -245,14 +254,23 @@ export default function LoginPage() {
                       disabled={isLoading}
                       onClick={() => setRole(r.id)}
                       className={cn(
-                        'flex-1 flex items-center justify-center gap-1.5 min-h-[44px] px-3 rounded-xl text-sm font-medium transition-all',
+                        'flex items-center gap-3 min-h-[48px] px-4 rounded-xl text-sm font-medium transition-all text-left',
                         active
-                          ? 'bg-white dark:bg-surface-dark-elevated text-gray-900 dark:text-gray-100 shadow-sm'
-                          : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300',
+                          ? 'bg-medical-50 dark:bg-medical-900/20 text-medical-700 dark:text-medical-300 ring-1 ring-medical-300 dark:ring-medical-700'
+                          : 'bg-white dark:bg-surface-dark-elevated text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border border-gray-200 dark:border-gray-700',
                       )}
                     >
-                      <Icon className="w-4 h-4" />
-                      <span className="hidden sm:inline">{r.label}</span>
+                      <div className={cn(
+                        'p-1.5 rounded-lg',
+                        active ? 'bg-medical-100 dark:bg-medical-800 text-medical-600 dark:text-medical-300' : 'bg-gray-100 dark:bg-gray-800 text-gray-400',
+                      )}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium leading-tight">{r.label}</p>
+                        <p className="text-[11px] opacity-60 leading-tight mt-0.5">{r.subtitle}</p>
+                      </div>
+                      {active && <Check className="w-4 h-4 shrink-0 text-medical-500" />}
                     </button>
                   );
                 })}
