@@ -24,7 +24,7 @@ import {
   Key,
   FileText,
   BadgeCheck,
-  IdCard,
+  ClipboardList,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -125,7 +125,7 @@ function getCredentialIcon(role: UserRole): typeof Shield {
   if (role === UserRole.ADMIN) return Key;
   if (role === UserRole.DOCTOR) return FileText;
   if (role === UserRole.NURSE) return BadgeCheck;
-  if (role === UserRole.CHW) return IdCard;
+  if (role === UserRole.CHW) return ClipboardList;
   return Shield;
 }
 
