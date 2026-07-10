@@ -3,30 +3,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, UserRole } from '@/types';
 
-export interface RoleCredentials {
-  adminKey?: string;
-  licenseNumber?: string;
-  certificationNumber?: string;
-  chwId?: string;
-}
-
-interface StoredAccount {
-  email: string;
-  password: string;
-  role: UserRole;
-  firstName: string;
-  lastName: string;
-  credentials?: RoleCredentials;
-  verifiedAt: string;
-}
-
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string, role?: UserRole) => Promise<void>;
-  register: (email: string, password: string, role: UserRole, credentials?: RoleCredentials) => Promise<void>;
-  loginWithOtp: (phone: string, otp: string) => Promise<void>;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  register: (payload: Record<string, unknown>) => Promise<void>;
+  logout: () => Promise<void>;
   hasRole: (roles: UserRole[]) => boolean;
 }
 
@@ -35,136 +17,49 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   login: async () => {},
   register: async () => {},
-  loginWithOtp: async () => {},
-  logout: () => {},
+  logout: async () => {},
   hasRole: () => false,
 });
 
-const ACCOUNTS_KEY = 'hutanotrack-accounts';
-const ADMIN_SETUP_KEY = 'ADMIN-SETUP-2024';
-
-const LICENSE_PATTERN = /^ML-\d{6}$/;
-const CERT_PATTERN = /^NC-\d{6}$/;
-const CHW_ID_PATTERN = /^CHW-\d{6}$/;
-
-const DEFAULT_ACCOUNTS: Record<string, StoredAccount> = {
-  'admin@example.com': {
-    email: 'admin@example.com',
-    password: 'Admin@123',
-    role: UserRole.ADMIN,
-    firstName: 'System',
-    lastName: 'Admin',
-    credentials: { adminKey: ADMIN_SETUP_KEY },
-    verifiedAt: new Date().toISOString(),
-  },
-  'doctor@example.com': {
-    email: 'doctor@example.com',
-    password: 'Doctor@123',
-    role: UserRole.DOCTOR,
-    firstName: 'Sarah',
-    lastName: 'Doctor',
-    credentials: { licenseNumber: 'ML-654321' },
-    verifiedAt: new Date().toISOString(),
-  },
-  'nurse@example.com': {
-    email: 'nurse@example.com',
-    password: 'Nurse@123',
-    role: UserRole.NURSE,
-    firstName: 'Grace',
-    lastName: 'Nurse',
-    credentials: { certificationNumber: 'NC-654321' },
-    verifiedAt: new Date().toISOString(),
-  },
-  'chw@example.com': {
-    email: 'chw@example.com',
-    password: 'Chw@123',
-    role: UserRole.CHW,
-    firstName: 'Tendai',
-    lastName: 'CHW',
-    credentials: { chwId: 'CHW-654321' },
-    verifiedAt: new Date().toISOString(),
-  },
-  'patient@example.com': {
-    email: 'patient@example.com',
-    password: 'Patient@123',
-    role: UserRole.PATIENT,
-    firstName: 'Chipo',
-    lastName: 'Patient',
-    verifiedAt: new Date().toISOString(),
-  },
-};
-
-function getAccounts(): Record<string, StoredAccount> {
-  if (typeof window === 'undefined') return {};
-  const raw = localStorage.getItem(ACCOUNTS_KEY);
-  if (raw) {
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return {};
-    }
-  }
-  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(DEFAULT_ACCOUNTS));
-  return { ...DEFAULT_ACCOUNTS };
+function splitName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) return { firstName: parts[0], lastName: '' };
+  return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
 }
 
-function saveAccounts(accounts: Record<string, StoredAccount>) {
-  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+function mapUser(apiUser: {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string;
+  clinicId?: string | null;
+}): User {
+  const { firstName, lastName } = splitName(apiUser.fullName);
+  return {
+    id: apiUser.id,
+    email: apiUser.email,
+    fullName: apiUser.fullName,
+    firstName,
+    lastName,
+    role: apiUser.role as UserRole,
+    clinicId: apiUser.clinicId,
+  };
 }
 
-function deriveName(email: string, role: UserRole): { firstName: string; lastName: string } {
-  const prefix = email.split('@')[0].replace(/[^a-zA-Z]/g, ' ');
-  const name = prefix.charAt(0).toUpperCase() + prefix.slice(1);
-  if (role === UserRole.ADMIN) return { firstName: name, lastName: 'Admin' };
-  if (role === UserRole.DOCTOR) return { firstName: name, lastName: 'Doctor' };
-  if (role === UserRole.NURSE) return { firstName: name, lastName: 'Nurse' };
-  if (role === UserRole.CHW) return { firstName: name, lastName: 'CHW' };
-  if (role === UserRole.PATIENT) return { firstName: name, lastName: 'Patient' };
-  if (role === UserRole.FAMILY) return { firstName: name, lastName: 'Family' };
-  return { firstName: name, lastName: 'Staff' };
-}
+async function apiFetch(path: string, options?: RequestInit) {
+  const res = await fetch(path, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
 
-function validatePasswordStrength(password: string): string | null {
-  if (!password) return 'Password is required';
-  if (password.length < 6) return 'Password must be at least 6 characters';
-  if (!/[a-zA-Z]/.test(password)) return 'Password must contain at least one letter';
-  if (!/[0-9]/.test(password)) return 'Password must contain at least one number';
-  return null;
-}
+  const data = await res.json();
 
-function validateEmail(value: string): string | null {
-  if (!value.trim()) return 'Email is required';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
-    return 'Enter a valid email address';
+  if (!res.ok) {
+    throw new Error(data.error || 'Request failed');
   }
-  return null;
-}
 
-function validateRoleCredentials(role: UserRole, credentials?: RoleCredentials): string | null {
-  if (role === UserRole.ADMIN) {
-    if (!credentials?.adminKey) return 'Admin Setup Key is required to register as Administrator. Contact your system administrator.';
-    if (credentials.adminKey !== ADMIN_SETUP_KEY) return 'Invalid Admin Setup Key. Please contact your system administrator for the correct key.';
-    return null;
-  }
-  if (role === UserRole.DOCTOR) {
-    if (!credentials?.licenseNumber) return 'Medical License Number is required to register as a Doctor.';
-    if (!LICENSE_PATTERN.test(credentials.licenseNumber)) return 'Invalid Medical License Number format. Must be ML- followed by 6 digits (e.g. ML-123456).';
-    return null;
-  }
-  if (role === UserRole.NURSE) {
-    if (!credentials?.certificationNumber) return 'Nursing Certification Number is required to register as a Nurse.';
-    if (!CERT_PATTERN.test(credentials.certificationNumber)) return 'Invalid Nursing Certification Number format. Must be NC- followed by 6 digits (e.g. NC-123456).';
-    return null;
-  }
-  if (role === UserRole.CHW) {
-    if (!credentials?.chwId) return 'CHW ID Number is required to register as a Community Health Worker.';
-    if (!CHW_ID_PATTERN.test(credentials.chwId)) return 'Invalid CHW ID Number format. Must be CHW- followed by 6 digits (e.g. CHW-123456).';
-    return null;
-  }
-  if (role === UserRole.PATIENT) {
-    return null;
-  }
-  return null;
+  return data;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -172,98 +67,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('hutanotrack-token');
-    const storedUser = localStorage.getItem('hutanotrack-user');
-    if (token && storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        localStorage.removeItem('hutanotrack-token');
-        localStorage.removeItem('hutanotrack-user');
-      }
-    }
-    setLoading(false);
+    apiFetch('/api/auth/me')
+      .then((data) => setUser(mapUser(data.user)))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
-  const register = useCallback(async (email: string, password: string, role: UserRole, credentials?: RoleCredentials) => {
-    const emailError = validateEmail(email);
-    if (emailError) throw new Error(emailError);
-
-    const passwordError = validatePasswordStrength(password);
-    if (passwordError) throw new Error(passwordError);
-
-    const credError = validateRoleCredentials(role, credentials);
-    if (credError) throw new Error(credError);
-
-    const accounts = getAccounts();
-    const key = email.toLowerCase().trim();
-
-    if (accounts[key]) {
-      throw new Error('An account with this email already exists. Please sign in instead.');
-    }
-
-    const { firstName, lastName } = deriveName(email, role);
-    accounts[key] = {
-      email: key,
-      password,
-      role,
-      firstName,
-      lastName,
-      credentials: credentials || {},
-      verifiedAt: new Date().toISOString(),
-    };
-    saveAccounts(accounts);
+  const login = useCallback(async (email: string, password: string) => {
+    const data = await apiFetch('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    setUser(mapUser(data.user));
   }, []);
 
-  const login = useCallback(async (email: string, password: string, role?: UserRole) => {
-    if (!email.trim() || !password) {
-      throw new Error('Email and password are required.');
-    }
-
-    const accounts = getAccounts();
-    const key = email.toLowerCase().trim();
-    const account = accounts[key];
-
-    if (!account) {
-      throw new Error(
-        `No account found for "${email}". Please create an account first.`,
-      );
-    }
-
-    if (account.password !== password) {
-      throw new Error('Incorrect password. Please try again.');
-    }
-
-    if (role && account.role !== role) {
-      throw new Error(
-        `This account is registered as "${account.role}". Please select the correct role and try again.`,
-      );
-    }
-
-    const newUser: User = {
-      id: email,
-      phone: email,
-      email: account.email,
-      firstName: account.firstName,
-      lastName: account.lastName,
-      role: account.role,
-      language: 'en',
-      isActive: true,
-      createdAt: account.verifiedAt,
-    };
-    setUser(newUser);
-    localStorage.setItem('hutanotrack-token', 'mock-token');
-    localStorage.setItem('hutanotrack-user', JSON.stringify(newUser));
+  const register = useCallback(async (payload: Record<string, unknown>) => {
+    const data = await apiFetch('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    setUser(mapUser(data.user));
   }, []);
 
-  const loginWithOtp = useCallback(async (_phone: string, _otp: string) => {
-    throw new Error('OTP login is not available yet.');
-  }, []);
-
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    await apiFetch('/api/auth/logout', { method: 'POST' });
     setUser(null);
-    localStorage.removeItem('hutanotrack-token');
-    localStorage.removeItem('hutanotrack-user');
   }, []);
 
   const hasRole = useCallback(
@@ -275,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, loginWithOtp, logout, hasRole }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, hasRole }}>
       {children}
     </AuthContext.Provider>
   );

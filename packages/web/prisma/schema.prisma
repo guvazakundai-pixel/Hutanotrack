@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  CLINIC_OWNER
+  DOCTOR
+  NURSE
+  PATIENT
+}
+
+enum PractitionerStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String              @id @default(cuid())
+  email        String              @unique
+  passwordHash String              @map("password_hash")
+  fullName     String              @map("full_name")
+  phoneNumber  String?             @map("phone_number")
+  role         UserRole
+  clinicId     String?             @map("clinic_id")
+  clinic       Clinic?             @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  practitioner PractitionerProfile?
+  patient      PatientProfile?
+  createdAt    DateTime            @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model Clinic {
+  id                 String                @id @default(cuid())
+  clinicName         String                @map("clinic_name")
+  physicalAddress    String                @map("physical_address")
+  provincialDistrict String                @map("provincial_district")
+  registrationNumber String                @unique @map("registration_number")
+  primaryContact     String?               @map("primary_contact")
+  createdAt          DateTime              @default(now()) @map("created_at")
+  users              User[]
+  practitioners     PractitionerProfile[]
+
+  @@map("clinics")
+}
+
+model PractitionerProfile {
+  id                   String             @id @default(cuid())
+  userId               String             @unique @map("user_id")
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  medicalLicenseNumber String             @unique @map("medical_license_number")
+  specialization       String?
+  activeStatus         PractitionerStatus @default(PENDING) @map("active_status")
+  clinicId             String?            @map("clinic_id")
+  clinic               Clinic?            @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  createdAt            DateTime           @default(now()) @map("created_at")
+
+  @@map("practitioner_profiles")
+}
+
+model PatientProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique @map("user_id")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nationalIdNumber String?  @unique @map("national_id_number")
+  dateOfBirth      DateTime @map("date_of_birth")
+  gender           String?
+  emergencyContact String?  @map("emergency_contact")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@map("patient_profiles")
+}

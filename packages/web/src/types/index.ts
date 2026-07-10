@@ -1,14 +1,9 @@
 export enum UserRole {
-  ADMIN = 'admin',
-  DOCTOR = 'doctor',
-  NURSE = 'nurse',
-  RECEPTIONIST = 'receptionist',
-  PHARMACIST = 'pharmacist',
-  LAB_STAFF = 'lab_staff',
-  DATA_MANAGER = 'data_manager',
-  CHW = 'chw',
-  PATIENT = 'patient',
-  FAMILY = 'family',
+  ADMIN = 'ADMIN',
+  CLINIC_OWNER = 'CLINIC_OWNER',
+  DOCTOR = 'DOCTOR',
+  NURSE = 'NURSE',
+  PATIENT = 'PATIENT',
 }
 
 export type RiskLevel = 'green' | 'amber' | 'red';
@@ -24,14 +19,13 @@ export type AppointmentStatus =
 
 export interface User {
   id: string;
-  phone: string;
-  email?: string;
+  email: string;
+  phone?: string;
   firstName: string;
   lastName: string;
+  fullName: string;
   role: UserRole;
-  language: string;
-  isActive: boolean;
-  createdAt: string;
+  clinicId?: string | null;
 }
 
 export interface Patient {
