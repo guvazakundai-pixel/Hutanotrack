@@ -71,6 +71,7 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [showDemoHint, setShowDemoHint] = useState(false);
 
   const fieldErrors = {
     email: touched.email ? validateEmail(email) : null,
@@ -394,17 +395,68 @@ export default function LoginPage() {
           </form>
 
           {/* Sign up */}
-          <div className="mt-8 text-center">
+          <div className="mt-8 text-center space-y-3">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               New to HutanoTrack?{' '}
               <button
                 type="button"
+                onClick={() => router.push('/auth/register')}
                 className="font-semibold text-medical-600 hover:text-medical-700 dark:text-medical-400 dark:hover:text-medical-300 transition-colors"
               >
                 Create an account
               </button>
             </p>
-            <p className="text-xs text-gray-400 mt-3">
+
+            {/* Demo accounts */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowDemoHint((prev) => !prev)}
+                className="text-xs text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 underline underline-offset-2 transition-colors"
+              >
+                {showDemoHint ? 'Hide' : 'Show'} demo accounts
+              </button>
+              <AnimatePresence>
+                {showDemoHint && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-2 overflow-hidden"
+                  >
+                    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-surface-dark-elevated p-3 text-left">
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                        Demo accounts:
+                      </p>
+                      <ul className="space-y-1.5">
+                        <li className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="font-medium text-medical-600 dark:text-medical-400">Admin:</span>{' '}
+                          admin@example.com / Admin@123
+                        </li>
+                        <li className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="font-medium text-medical-600 dark:text-medical-400">Doctor:</span>{' '}
+                          doctor@example.com / Doctor@123
+                        </li>
+                        <li className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="font-medium text-medical-600 dark:text-medical-400">Nurse:</span>{' '}
+                          nurse@example.com / Nurse@123
+                        </li>
+                        <li className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="font-medium text-medical-600 dark:text-medical-400">CHW:</span>{' '}
+                          chw@example.com / Chw@123
+                        </li>
+                        <li className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="font-medium text-medical-600 dark:text-medical-400">Patient:</span>{' '}
+                          patient@example.com / Patient@123
+                        </li>
+                      </ul>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <p className="text-xs text-gray-400">
               For clinic access, contact your administrator.
             </p>
           </div>
