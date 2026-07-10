@@ -38,18 +38,18 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, href: '/dashboard', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE, UserRole.RECEPTIONIST, UserRole.DATA_MANAGER, UserRole.PHARMACIST, UserRole.LAB_STAFF, UserRole.CHW, UserRole.PATIENT, UserRole.FAMILY] },
-  { label: 'Patients', icon: <Users className="w-5 h-5" />, href: '/patients', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE, UserRole.RECEPTIONIST, UserRole.DATA_MANAGER] },
-  { label: 'Appointments', icon: <CalendarCheck className="w-5 h-5" />, href: '/appointments', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE, UserRole.RECEPTIONIST, UserRole.PATIENT, UserRole.FAMILY] },
-  { label: 'Pharmacy', icon: <Pill className="w-5 h-5" />, href: '/pharmacy', roles: [UserRole.ADMIN, UserRole.PHARMACIST] },
-  { label: 'Laboratory', icon: <FlaskConical className="w-5 h-5" />, href: '/laboratory', roles: [UserRole.ADMIN, UserRole.LAB_STAFF] },
-  { label: 'Community', icon: <Building2 className="w-5 h-5" />, href: '/community', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE, UserRole.CHW, UserRole.DATA_MANAGER] },
-  { label: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, href: '/analytics', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.DATA_MANAGER] },
+  { label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" />, href: '/dashboard', roles: [UserRole.ADMIN, UserRole.CLINIC_OWNER, UserRole.DOCTOR, UserRole.NURSE, UserRole.CHW, UserRole.PATIENT] },
+  { label: 'Patients', icon: <Users className="w-5 h-5" />, href: '/patients', roles: [UserRole.ADMIN, UserRole.CLINIC_OWNER, UserRole.DOCTOR, UserRole.NURSE] },
+  { label: 'Appointments', icon: <CalendarCheck className="w-5 h-5" />, href: '/appointments', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE, UserRole.PATIENT] },
+  { label: 'Pharmacy', icon: <Pill className="w-5 h-5" />, href: '/pharmacy', roles: [UserRole.ADMIN, UserRole.CLINIC_OWNER, UserRole.DOCTOR] },
+  { label: 'Laboratory', icon: <FlaskConical className="w-5 h-5" />, href: '/laboratory', roles: [UserRole.ADMIN, UserRole.CLINIC_OWNER, UserRole.DOCTOR, UserRole.NURSE] },
+  { label: 'Community', icon: <Building2 className="w-5 h-5" />, href: '/community', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE, UserRole.CHW] },
+  { label: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, href: '/analytics', roles: [UserRole.ADMIN, UserRole.DOCTOR] },
   { label: 'Emergency', icon: <HeartPulse className="w-5 h-5" />, href: '/emergency', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE, UserRole.CHW] },
-  { label: 'Education', icon: <BookOpen className="w-5 h-5" />, href: '/education', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE, UserRole.CHW, UserRole.PATIENT, UserRole.FAMILY] },
-  { label: 'Family', icon: <UsersRound className="w-5 h-5" />, href: '/family', roles: [UserRole.ADMIN, UserRole.CHW, UserRole.FAMILY, UserRole.PATIENT] },
+  { label: 'Education', icon: <BookOpen className="w-5 h-5" />, href: '/education', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE, UserRole.CHW, UserRole.PATIENT] },
+  { label: 'Family', icon: <UsersRound className="w-5 h-5" />, href: '/family', roles: [UserRole.ADMIN, UserRole.CHW, UserRole.PATIENT] },
   { label: 'Admin', icon: <Shield className="w-5 h-5" />, href: '/admin', roles: [UserRole.ADMIN] },
-  { label: 'Settings', icon: <Settings className="w-5 h-5" />, href: '/settings', roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.NURSE, UserRole.CHW, UserRole.PATIENT, UserRole.FAMILY] },
+  { label: 'Settings', icon: <Settings className="w-5 h-5" />, href: '/settings', roles: [UserRole.ADMIN, UserRole.CLINIC_OWNER, UserRole.DOCTOR, UserRole.NURSE, UserRole.CHW, UserRole.PATIENT] },
 ];
 
 function SidebarContent({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {

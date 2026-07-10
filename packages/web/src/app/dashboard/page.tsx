@@ -374,7 +374,7 @@ export default function DashboardPage() {
 
   const role = user?.role ?? UserRole.DOCTOR;
 
-  if (role === UserRole.PATIENT || role === UserRole.FAMILY) {
+  if (role === UserRole.PATIENT) {
     return (
       <DashboardLayout>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full space-y-4 min-w-0">
